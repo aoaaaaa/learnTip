@@ -23,14 +23,14 @@
 ## webpack五个核心概念
 
 > **entry**：用来告诉webpack从哪个文件作为入口开始打包，打包前会分析构建内部依赖图
->(```)
+>```
     module.exports={
         entry:'./path/to/file.js' 
     }
-(```)
+```
 
 > **output**：告诉webpack将打包后的资源bundle输出到哪里（path\publicPath）,以及叫什么名字（filename）
->(```)
+>```
     const path = require("path");
     module.exports = {
         entry: "./path/to/my/entry/file.js",
@@ -39,10 +39,10 @@
             filename: "my-first-webpack.bundle.js"
         }
     };
-(```)
+```
 
 > **loader**：让webpack能够处理那些为js文件，因为webpack自身只能理解js，像css、img等文件无法处理，这时候就需要loader来将这些文件翻译成webpack能看懂的内容，从而使webpack能去处理
->(```)
+>```
     const path = require("path");
     module.exports = {
         output: {
@@ -59,10 +59,10 @@
             ]
         }
     };
-(```)
+```
 
 > **plugins**：（插件）用于执行范围更广的任务，因为loader只能作为翻译，更多其他的功能无法实现，这时候就需要插件来做功能更强大的事，插件的范围包括，从打包优化和压缩，一直到重新定义环境中的变量等。
->(```)
+>```
     const HtmlWebpackPlugin = require("html-webpack-plugin");
     module.exports = {
         module: {
@@ -70,11 +70,11 @@
         },
         plugins: [new HtmlWebpackPlugin({ template: "./src/index.html" })]
     };
-(```)
+```
 
 > 编写自定义插件
 利用webpack提供的钩子函数，编写自定义插件，相当于监听webpack的事件，并作出相应的响应。
->(```)
+>```
     class APlugin {
         // apply方法，会在new plugin后被webpack自动执行。
         apply(compiler) {
@@ -87,10 +87,10 @@
             });
         }
     }
-(```)
+```
 如果不使用plugins，webpack会把所有文件打包到一个js文件中，随着项目的迭代和内容的增大，这个文件也会变得很大，从而导致加载时间变得很长，这个时候需要去配置optimization.splitChunks来设置拆分文件的规则，从而解决上述的问题。
 > webpack默认的配置
->(```)
+>```
     module.exports = {
         optimization: {
             splitChunks: {
@@ -116,12 +116,12 @@
             }
         }
     };
-(```)
+```
 
 > **mode**：（模式）分为development和production，其中development（开发模式）能让代码在本地调试的运行环境，production（生产模式）为让代码优化上线运行的环境。
 
 > 在webpack构建的过程中，主要花费时间的部分是递归遍历各个entry，然后寻找依赖并且逐个依次编译的过程，每次递归都要经历String->AST->String的流程（emmmmmm，不是很懂这个），经过loader还需要处理一些字符串或者执行一些js脚本，同时node.js还是单线程的。因此需要使用happypack，happypack是使用了node processes执行多线程构建，可以让多个loader并行执行，从而加快webpack的构建。
->(```)
+>```
     // @file: webpack.config.js
     var HappyPack = require("happypack");
     var happyThreadPool = HappyPack.ThreadPool({ size: 5 });
@@ -150,5 +150,5 @@
             use: "happypack/loader?id=styles"
         }
     ];
-(```)
+```
 
