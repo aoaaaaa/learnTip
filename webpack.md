@@ -152,3 +152,79 @@
     ];
 ```
 
+---
+## webpack性能优化
+
+### 缩小文件搜索范围
+1.通过exclude、include 缩小搜索范围
+例如：
+```
+module.exports = {
+    module:{
+        rules:[
+            {
+                test:/\.js$/,
+                loader:&apos;babel-loader&apos;,
+                // 只在src文件夹中查找
+                include:[resolve(&apos;src&apos;)],
+                // 排除的路径
+                exclude:/node_modules/
+            }
+        ]
+    }
+}
+```
+2. 合理利用resolve 字段配置
+    2.1 配置`resolve.modules:[path.resolve(__dirname,&apos;node_modules&apos;)]`避免层层查找
+        其中 resolve.modules会告诉webpack去哪些目录寻找第三方模块，如果不配置 `path.resolve(__dirname,&apos;node_modules&apos;)`，则会依次查找.`/node_module、../node_modules`，一层一层网上找，这显然效率不高。
+    2.2对庞大的第三方模块设置 resolve.alias，使webpack直接使用库的min文件，避免库内解析
+       可以通过别名的方式来映射一个路径，能让Webpack更快找到路径。
+       例如：
+       ```
+       resolve.alias:{
+            &apos;react&apos;:patch.resolve(__dirname, &apos;./node_modules/react/dist/react.min.js&apos;)
+        }
+
+       ```
+    2.3 resolve.extensions ，减少文件查找
+        resolve.extensions 用来表明文件后缀列表，默认查找顺序是：[&apos;.js&apos;,&apos;.json&apos;]，如果导入文件没有添加后缀就会按照这个顺序查找文件。应该尽可能减少后缀列表长度，然后将出现频率高的后缀排在后面。
+        
+### 缓存之前构建过的js
+将Babel编译过的文件缓存起来，下次只需要编译更改过的代码文件即可，这样可以大幅度加快打包时间。
+loader:&apos;babel-loader?cacheDirectory=true&apos;
+
+### 提前构建第三方库
+处理第三方库的方法有很多种，其中，Externals不够聪明，一些情况下会引发重复打包的问题；而 CommonsChunkPlugin 每次构建时都会重新构建一次 vendor；处于效率考虑还是考虑使用DllPlugin。
+DLL全称Dynamic-link library，（动态链接库）。到底怎么个动态法。原理是将网页依赖的基础模块抽离出来打包到dll文件中，当需要导入的模块存在于某个dll中时，这个模块不再被打包，而是去dll中获取，而且通常都是第三方库。那么为什么能提升构建速度，原因在于这些第三方模块如果不升级，那么只需要被构建一次。
+
+### 并行构建而不是同步构建
+受限于 Node 是单线程运行的，所以 Webpack 在打包的过程中也是单线程的，特别是在执行 Loader 的时候，长时间编译的任务很多，这样就会导致等待的情况。HappyPack和ThreadLoader作用是一样的，都是同时执行多个进程，从而加快构建速度。而Thread-Loader是webpack4提出的。
+
+### html文件处理
+默认不能使用HMR功能，而且对于html文件一般也不做热更新。对于单页面来讲，因为一旦html更新了，那么整个页面都刷新了，称不上真正意义的热更新。
+
+### css文件处理
+默认情况下css可以使用HMR功能，因为style-loader内部实现了。
+
+### js文件处理
+默认不能使用HMR功能，需要修改js代码，添加支持HMR功能代码
+而且，HMR功能对js的处理，只能处理非入口js文件。
+
+
+## 压缩打包体积
+
+### 删除冗余代码
+使用TreeShaking删除无用代码，这里的无用指的是当发现引入模块的某些内容在其他地方并没有使用时，就被当作无用节点，从而被删掉。看起来时高级的技术，但是在有些版本也有被误杀的可能性。
+使用前提:依赖ES6的import、export模块化语法、webpack.config.js 的 mode:&apos;production&apos;
+
+
+### 代码分割实现按需加载
+（待续）
+
+
+
+
+
+
+
+
